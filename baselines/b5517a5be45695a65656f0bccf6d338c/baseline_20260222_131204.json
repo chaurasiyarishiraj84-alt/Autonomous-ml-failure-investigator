@@ -1,0 +1,14 @@
+{
+  "avg_confidence": 0.8219999999999998,
+  "confidence_std": 0.07440430095095309,
+  "total_samples": 5,
+  "error_rate": 0.0,
+  "confidence_scores": [
+    0.72,
+    0.84,
+    0.84,
+    0.77,
+    0.94
+  ],
+  "features": {}
+}
