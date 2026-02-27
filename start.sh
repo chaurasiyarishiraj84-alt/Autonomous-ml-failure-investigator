@@ -7,4 +7,4 @@ echo "Waiting for backend to start..."
 sleep 5
 
 echo "Starting Streamlit dashboard..."
-python -m streamlit run ui/dashboard.py --server.port 7860 --server.address 0.0.0.0
+python -m streamlit run ui/dashboard.py --server.port 7860 --server.address 0.0.0.0 --server.headless true
