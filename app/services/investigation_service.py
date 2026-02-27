@@ -45,13 +45,12 @@ class InvestigationService:
                     model_url=model_url,
                     payload=payload,
                 )
+                print(f"✅ Response: {response}")  
                 predictions.append(response)
                 confidence_scores.append(response.get("confidence", 0.0))
-            except Exception:
-                # model failure is also a signal
-                predictions.append({"confidence": 0.0})
-                confidence_scores.append(0.0)
-
+            except Exception as e:
+                print(f"❌ Model call failed: {e}")  
+                continue  
         # 📊 Current metrics
         current_metrics = BaselineBuilder.build(predictions)
         current_metrics["confidence_scores"] = confidence_scores
