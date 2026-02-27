@@ -113,7 +113,7 @@ if st.session_state.running:
 
         if r.status_code == 200:
             data = r.json()
-            metrics = data.get("metrics", {})
+            metrics = data.get("current_metrics") or data.get("metrics", {})
 
             st.session_state.last_drift = data.get("drift", {})
             st.session_state.last_rca = data.get("rca", {}) 
