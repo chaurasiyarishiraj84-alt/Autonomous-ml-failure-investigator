@@ -21,11 +21,13 @@ class BaselineBuilder:
                 "features": {},
             }
 
+       errors = sum(1 for p in predictions if p.get("confidence", 1.0) < 0.2 or p.get("prediction") == "error")
+
         return {
             "avg_confidence": float(np.mean(confidences)),
             "confidence_std": float(np.std(confidences)),
             "total_samples": len(confidences),
-            "error_rate": 0.0,
+            "error_rate": round(errors / len(confidences), 3),
             "confidence_scores": confidences,
             "features": {},
         }
