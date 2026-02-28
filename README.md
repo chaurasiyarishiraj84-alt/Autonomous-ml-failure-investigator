@@ -3,8 +3,8 @@ title: Autonomous ML Failure Investigator
 emoji: 🧠
 colorFrom: purple
 colorTo: blue
-sdk: streamlit
-app_file: ui/dashboard.py
+sdk: docker
+app_port: 7860
 pinned: true
 license: mit
 ---
@@ -78,6 +78,52 @@ Continuous Learning         → improves from past failures
 
 ---
 
+## ✅ Compatible API Requirements
+
+Any API URL you connect to this system must follow **3 simple rules:**
+
+### 1. Must be a public URL
+```
+✅ https://anything.hf.space/predict
+✅ https://any-public-api.com/predict
+❌ http://127.0.0.1:9000/predict   ← localhost only works for local development
+```
+
+### 2. Must accept POST requests with a JSON body
+```json
+POST /predict
+Content-Type: application/json
+
+{"text": "anything"}
+```
+
+### 3. Must return JSON with a `confidence` field
+```json
+{
+    "prediction": "any string",
+    "confidence": 0.85
+}
+```
+
+> `confidence` must be a **float between 0.0 and 1.0** — this is the most critical field.
+
+---
+
+### 🧪 Ready-to-Use Test Models
+
+Deploy these on HuggingFace to simulate different failure scenarios:
+
+| Model | URL | Behavior |
+|---|---|---|
+| 🟢 Healthy Model | `https://rishi-raj123-healthy-model.hf.space/predict` | confidence 0.80–0.95 — normal |
+| 🔴 Low Confidence | `https://rishi-raj123-low-confidence-model.hf.space/predict` | confidence 0.10–0.30 — triggers alerts |
+| 🟡 Random Model | `https://rishi-raj123-random-model.hf.space/predict` | confidence 0.0–1.0 — unpredictable |
+| 📉 Drift Model | `https://rishi-raj123-drift-model.hf.space/predict` | confidence degrades over time |
+
+Each model is a minimal FastAPI app with a single `POST /predict` endpoint — fully compatible with all system features including drift detection, RCA, and recommendations.
+
+---
+
 ## 📂 Project Structure
 
 ```
@@ -87,104 +133,37 @@ autonomous-ml-failure-investigator/
 │   ├── main.py                              # FastAPI entry point
 │   ├── api/
 │   │   └── routes/
-│   │       ├── auth.py                      # Authentication routes
-│   │       ├── model.py                     # Model registration routes
 │   │       ├── monitoring.py                # Monitoring API endpoints
 │   │       └── recommendation.py            # Recommendation routes
 │   ├── core/
-│   │   ├── automation/
-│   │   │   ├── decision_engine.py           # Auto-action decision logic
-│   │   │   ├── deploy_manager.py            # Safe model deployment
-│   │   │   ├── executor.py                  # Action executor
-│   │   │   ├── model_validator.py           # Model validation checks
-│   │   │   └── retrain_pipeline.py          # Retraining trigger
-│   │   ├── baselines/
-│   │   │   ├── baseline_builder.py          # Baseline construction
-│   │   │   └── baseline_store.py            # Baseline persistence
 │   │   ├── detection/
-│   │   │   ├── accuracy_drift_detector.py   # Accuracy drift detection
 │   │   │   ├── anomaly_detector.py          # Rule + ML anomaly detection
 │   │   │   ├── drift_detector.py            # KS-test, variance, feature drift
 │   │   │   └── metric_checker.py            # Threshold-based metric checks
-│   │   ├── governance/
-│   │   │   └── approval_flow.py             # Human approval + audit logs
-│   │   ├── learning/
-│   │   │   ├── failure_memory.py            # Stores past failure patterns
-│   │   │   └── pattern_learner.py           # Learns from failure history
-│   │   ├── metrics/
-│   │   │   └── baseline_builder.py          # Metrics computation
-│   │   ├── observer/
-│   │   │   ├── accuracy_tracker.py          # Tracks accuracy over time
-│   │   │   ├── data_collector.py            # Collects prediction data
-│   │   │   ├── model_prober.py              # Probes model behavior
-│   │   │   └── model_watcher.py             # Continuous model watcher
 │   │   ├── probing/
-│   │   │   ├── model_prober.py              # Model probe logic
-│   │   │   ├── payload_generator.py         # Test payload generation
 │   │   │   └── universal_model_caller.py    # Universal model connector
 │   │   ├── rca/
-│   │   │   ├── feature_attribution.py       # Feature-level RCA
-│   │   │   ├── root_cause_analyzer.py       # Main RCA engine
-│   │   │   └── shap_explainer.py            # SHAP-based explainability
+│   │   │   └── feature_attribution.py       # Feature-level RCA
 │   │   ├── recommendation/
-│   │   │   ├── recommender.py               # Recommendation orchestrator
 │   │   │   └── rule_engine.py               # Maps failures to fixes
-│   │   ├── storage/
-│   │   │   └── baseline_store.py            # Baseline storage layer
-│   │   └── utils/
-│   │       └── serialization.py             # JSON/data serialization
-│   ├── db/
-│   │   ├── models.py                        # Database models
-│   │   └── session.py                       # DB session management
-│   ├── schemas/
-│   │   ├── auth.py                          # Auth request/response models
-│   │   ├── model.py                         # Model schema
-│   │   ├── monitoring.py                    # Monitoring schema
-│   │   └── recommendation.py               # Recommendation schema
-│   ├── security/
-│   │   ├── auth.py                          # Auth & token handling
-│   │   └── encryption.py                    # Data encryption
-│   ├── services/
-│   │   ├── auth_service.py                  # Authentication service
-│   │   ├── automation_service.py            # Auto-action service
-│   │   ├── baseline_builder.py              # Baseline service
-│   │   ├── detection_service.py             # Detection orchestration
-│   │   ├── investigation_service.py         # Core investigation layer
-│   │   ├── monitoring_service.py            # Monitoring service
-│   │   ├── monitoring_orchestrator.py       # Monitoring orchestration
-│   │   └── recommendation_service.py        # Recommendation service
-│   └── utils/
-│       ├── config.py                        # Settings & environment
-│       └── logger.py                        # Structured logging
+│   │   └── storage/
+│   │       └── baseline_store.py            # Baseline storage layer
+│   └── services/
+│       ├── baseline_builder.py              # Baseline service
+│       ├── investigation_service.py         # Core investigation layer
+│       └── monitoring_service.py            # Monitoring service
 │
 ├── ui/
 │   └── dashboard.py                         # Streamlit frontend dashboard
 │
 ├── tests/
-│   ├── test_monitoring.py                   # Monitoring tests
-│   ├── test_detection.py                    # Detection tests
-│   └── test_recommendation.py              # Recommendation tests
-│
-├── data/
-│   ├── audit_logs/                          # Governance audit trail
-│   │   └── approvals.json                   # Human approval log
-│   └── samples/                             # Safe example data
+│   ├── test_monitoring.py
+│   ├── test_detection.py
+│   └── test_recommendation.py
 │
 ├── baselines/                               # Stored model baselines (auto-generated)
-│
-├── docs/
-│   ├── architecture.md                      # System architecture details
-│   ├── threat_model.md                      # Security threat model
-│   └── user_guide.md                        # User guide
-│
-├── docker/
-│   └── Dockerfile                           # Docker configuration
-│
-├── dummy_model/                             # Test model for local testing
-│
-├── .env.example                             # Environment variables template
-├── .gitignore                               # Git ignore rules
-├── Dockerfile                               # Root Dockerfile
+├── Dockerfile                               # Docker configuration
+├── start.sh                                 # Multi-process startup script
 ├── requirements.txt                         # Python dependencies
 └── README.md
 ```
@@ -194,10 +173,10 @@ autonomous-ml-failure-investigator/
 ## ✨ Key Features
 
 ### 📊 Model Monitoring
-- Average confidence score
+- Average confidence score tracking
 - Confidence standard deviation
-- Error rate tracking
-- Latency monitoring
+- Error rate calculation
+- Latency monitoring in milliseconds
 - Real-time sample collection counter
 
 ### 📈 Baseline Learning
@@ -216,18 +195,12 @@ autonomous-ml-failure-investigator/
 - Identifies exactly why failure occurred
 - Reports which features contributed most
 - Highlights affected user segments
-- Assigns severity: critical / high / medium / low
-
-### 🧠 Explainability
-- Feature importance analysis via SHAP
-- Identifies drifting features
-- Plain English failure explanations
-- Business-safe, audit-ready reports
+- Assigns severity: `critical` / `high` / `medium` / `low`
 
 ### 🛠️ Recommendation Engine
 - Maps each failure type to specific corrective action
 - Actionable suggestions: retrain, rollback, fix pipeline, recalibrate
-- Priority-ranked: CRITICAL → HIGH → MEDIUM → LOW
+- Priority-ranked: `CRITICAL` → `HIGH` → `MEDIUM` → `LOW`
 - Context-aware — different recommendations per failure type
 
 ### 👨‍⚖️ Human-in-the-Loop Governance
@@ -236,12 +209,12 @@ autonomous-ml-failure-investigator/
 - Full audit log with timestamps
 - Compliant with enterprise governance standards
 
-### 🖥️ Dashboard (Streamlit)
+### 🖥️ Live Dashboard (Streamlit)
 - Real-time Plotly charts (confidence, error rate, latency)
 - Start / Stop monitoring controls
 - CSV data export
 - Alerts & anomaly indicators
-- Governance approval buttons with audit log
+- Governance approval panel with audit log
 - Auto-refreshes every 2 seconds
 
 ---
@@ -279,31 +252,23 @@ cp .env.example .env
 
 ## ▶️ Running Locally
 
-### Start the backend
+**Start the backend:**
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+Verify at: `http://localhost:8000/health`
 
-Verify it's running:
-```
-http://localhost:8000/health
-```
-
-### Start the dashboard
+**Start the dashboard:**
 ```bash
 streamlit run ui/dashboard.py
 ```
-
-Open in browser:
-```
-http://localhost:8501
-```
+Open at: `http://localhost:8501`
 
 ---
 
 ## 🧪 Quick Test
 
-Create a simple test model (`test_model.py`):
+Create a simple local test model (`test_model.py`):
 
 ```python
 from fastapi import FastAPI
@@ -312,7 +277,7 @@ import random
 app = FastAPI()
 
 @app.post("/predict")
-def predict(data: dict):
+def predict(data: dict = None):
     return {
         "prediction": "spam" if random.random() > 0.5 else "not_spam",
         "confidence": round(random.uniform(0.6, 0.95), 3)
@@ -324,26 +289,18 @@ Run it:
 uvicorn test_model:app --port 9000 --reload
 ```
 
-In the dashboard, enter `http://127.0.0.1:9000/predict` and click **Start Monitoring**.
-
-To simulate failures and test RCA & recommendations:
-```python
-"confidence": round(random.uniform(0.1, 0.3), 3)  # triggers low confidence alert
-```
+In the dashboard enter `http://127.0.0.1:9000/predict` → click **Start Monitoring**.
 
 ---
 
 ## 📄 API Reference
 
 ### `POST /monitoring/analyze`
-
 Runs full investigation on a model endpoint.
 
 **Request:**
 ```json
-{
-  "prediction_url": "http://your-model.com/predict"
-}
+{ "prediction_url": "https://your-model.com/predict" }
 ```
 
 **Response:**
@@ -352,15 +309,14 @@ Runs full investigation on a model endpoint.
   "metrics": {
     "avg_confidence": 0.85,
     "confidence_std": 0.04,
-    "error_rate": 0.0,
+    "error_rate": 0.02,
     "total_samples": 5
   },
   "drift": {
     "confidence_distribution": {
       "method": "KS-test",
-      "statistic": 0.2,
-      "p_value": 0.43,
-      "drift_detected": false
+      "drift_detected": false,
+      "p_value": 0.43
     }
   },
   "anomalies": [],
@@ -412,127 +368,30 @@ Ingest a single prediction log manually.
 
 ---
 
-## 🔌 Supported Model Types
-
-| Type | Example |
-|---|---|
-| Generic REST API | Any `POST /predict` endpoint |
-| HuggingFace Inference API | `https://api-inference.huggingface.co/...` |
-| Gradio Apps | `/run/predict` endpoints |
-| Local models | `http://localhost:PORT/predict` |
-
----
-
 ## 🐛 Troubleshooting
 
-### Problem: Backend not starting
-**Error:** `ERROR: Address already in use`
-
-**Solution:**
-```bash
-# Windows
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-
-# Mac/Linux
-lsof -i :8000
-kill -9 <PID>
-```
-
----
-
-### Problem: Streamlit dashboard not loading
-**Error:** `ConnectionError: Failed to connect to backend`
-
-**Solution:** Make sure backend is running first on port 8000, then start dashboard:
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
----
-
-### Problem: ModuleNotFoundError
-**Error:** `ModuleNotFoundError: No module named 'fastapi'`
-
-**Solution:** Activate virtual environment first, then:
-```bash
-pip install -r requirements.txt
-```
-
----
-
-### Problem: RCA variable error
-**Error:** `UnboundLocalError: cannot access local variable 'rca'`
-
-**Solution:** Remove this line from `investigation_service.py`:
-```python
-from app.core import rca  # delete this line
-```
-
----
-
-### Problem: Samples Collected stays at 0
-**Solution:** Make sure your model returns a `confidence` field in its response:
-```json
-{ "prediction": "spam", "confidence": 0.87 }
-```
-
----
-
-### Problem: streamlit-autorefresh not found
-**Solution:**
-```bash
-pip install streamlit-autorefresh
-```
-
----
-
-### Problem: SHAP or Evidently install fails
-**Solution:**
-```bash
-pip install shap --no-cache-dir
-pip install evidently --no-cache-dir
-```
-
----
-
-### Problem: pydantic_settings import error
-**Error:** `ModuleNotFoundError: No module named 'pydantic_settings'`
-
-**Solution:**
-```bash
-pip install pydantic-settings
-```
-
----
-
-### Problem: Port already in use for test model
-**Solution:** Run test model on a different port:
-```bash
-uvicorn test_model:app --port 9001 --reload
-# Then use http://127.0.0.1:9001/predict in dashboard
-```
-
----
-
-## 🧪 Testing
-
-```bash
-pytest tests/
-```
+| Problem | Error | Solution |
+|---|---|---|
+| Backend not starting | `Address already in use` | Kill process on port 8000 |
+| Dashboard not loading | `ConnectionError` | Start backend first on port 8000 |
+| Module not found | `No module named 'fastapi'` | Activate venv → `pip install -r requirements.txt` |
+| Samples stuck at 0 | — | Ensure model returns `confidence` field |
+| autorefresh not found | — | `pip install streamlit-autorefresh` |
+| pydantic error | `No module named 'pydantic_settings'` | `pip install pydantic-settings` |
+| Confidence always 0.0 | — | Use a public URL, not localhost on HuggingFace |
 
 ---
 
 ## 🌍 Deployment
 
 - ✅ Docker ready
-- ✅ Hugging Face Spaces compatible
-- ✅ Cloud-ready architecture (AWS, GCP, Azure)
+- ✅ HuggingFace Spaces compatible
+- ✅ Cloud-ready (AWS, GCP, Azure)
 - ✅ CI/CD compatible
 
 ```bash
 docker build -t ml-failure-investigator .
-docker run -p 8000:8000 ml-failure-investigator
+docker run -p 7860:7860 ml-failure-investigator
 ```
 
 ---
@@ -578,4 +437,4 @@ MIT License — Open Source
 
 ---
 
-> This project demonstrates how real production ML systems are monitored, debugged, and governed — not just how models are trained. It reflects industry-standard MLOps thinking used at scale.
+> *This project demonstrates how real production ML systems are monitored, debugged, and governed — not just how models are trained. It reflects industry-standard MLOps thinking used at scale.*
