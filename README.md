@@ -1,12 +1,4 @@
----
-title: Autonomous ML Failure Investigator
-emoji: 🧠
-colorFrom: purple
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: true
-license: mit
+
 ---
 
 # 🧠 Autonomous ML Failure Investigator
